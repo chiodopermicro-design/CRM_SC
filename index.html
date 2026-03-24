@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinCRM — Gestione Clienti</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1f2d45;
+    --accent: #c8a96e;
+    --accent2: #e8c98e;
+    --green: #2dd4a0;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --blue: #60a5fa;
+    --text: #e8eaf0;
+    --text2: #8899b0;
+    --text3: #4a5568;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --serif: 'Playfair Display', serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo {
+    font-family: var(--serif);
+    font-size: 20px;
+    color: var(--accent);
+    letter-spacing: 0.03em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #0a0e1a; font-weight: 700;
+  }
+  .header-right { display: flex; align-items: center; gap: 20px; }
+  .operator-info {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text2); font-size: 13px;
+  }
+  .operator-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #2a3f6f, #3a5fa0);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--accent);
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(45,212,160,0.1);
+    border: 1px solid rgba(45,212,160,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-family: var(--mono); font-size: 11px; color: var(--green);
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 58px); }
+
+  /* ── SIDEBAR ── */
+  aside {
+    width: 300px; min-width: 300px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .search-bar {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-input-wrap {
+    position: relative;
+  }
+  .search-input-wrap svg {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--text3);
+  }
+  .search-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px 9px 34px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  .sidebar-label {
+    padding: 12px 16px 6px;
+    font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text3);
+    font-weight: 500;
+  }
+
+  .client-list { overflow-y: auto; flex: 1; }
+  .client-list::-webkit-scrollbar { width: 4px; }
+  .client-list::-webkit-scrollbar-track { background: transparent; }
+  .client-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .client-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .client-item:hover { background: var(--surface2); }
+  .client-item.active {
+    background: rgba(200,169,110,0.08);
+    border-left: 3px solid var(--accent);
+  }
+  .client-avatar {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px; flex-shrink: 0;
+  }
+  .client-info { flex: 1; min-width: 0; }
+  .client-name {
+    font-weight: 500; font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .client-meta {
+    font-size: 11px; color: var(--text2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    flex: 1; overflow-y: auto;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  main::-webkit-scrollbar { width: 4px; }
+  main::-webkit-scrollbar-track { background: transparent; }
+  main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── WELCOME STATE ── */
+  .welcome-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; color: var(--text3); text-align: center;
+    padding: 60px 20px;
+  }
+  .welcome-icon {
+    width: 80px; height: 80px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 8px;
+  }
+  .welcome-state h3 { font-family: var(--serif); font-size: 22px; color: var(--text2); }
+  .welcome-state p { font-size: 13px; max-width: 320px; line-height: 1.6; }
+
+  /* ── CLIENT HEADER ── */
+  .client-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 28px;
+    display: flex; align-items: center; gap: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .client-header-avatar {
+    width: 64px; height: 64px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; flex-shrink: 0;
+  }
+  .client-header-info { flex: 1; }
+  .client-header-name {
+    font-family: var(--serif); font-size: 24px;
+    margin-bottom: 4px;
+  }
+  .client-header-sub {
+    color: var(--text2); font-size: 13px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px;
+    font-weight: 500; font-family: var(--mono);
+  }
+  .badge-green { background: rgba(45,212,160,0.12); color: var(--green); border: 1px solid rgba(45,212,160,0.25); }
+  .badge-red { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.25); }
+  .badge-yellow { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,0.25); }
+  .badge-blue { background: rgba(96,165,250,0.12); color: var(--blue); border: 1px solid rgba(96,165,250,0.25); }
+  .badge-gold { background: rgba(200,169,110,0.12); color: var(--accent); border: 1px solid rgba(200,169,110,0.25); }
+
+  .client-header-actions {
+    display: flex; gap: 10px;
+  }
+  .btn {
+    padding: 8px 18px; border-radius: 8px; border: none;
+    cursor: pointer; font-family: var(--sans); font-size: 13px;
+    font-weight: 500; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0a0e1a; font-weight: 600;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; animation: fadeIn 0.35s ease; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; animation: fadeIn 0.4s ease; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border); }
+  .card-title {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text3); font-weight: 500; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title-icon {
+    width: 22px; height: 22px;
+    background: var(--surface2);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  /* ── KPI CARDS ── */
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .kpi-card.gold::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .kpi-card.green::before { background: var(--green); }
+  .kpi-card.red::before { background: var(--red); }
+  .kpi-card.blue::before { background: var(--blue); }
+
+  .kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .kpi-value { font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .kpi-sub { font-size: 12px; color: var(--text2); }
+  .kpi-icon {
+    position: absolute; right: 18px; top: 18px;
+    font-size: 20px; opacity: 0.25;
+  }
+
+  /* ── FIELD ROWS ── */
+  .field-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-row:last-child { border-bottom: none; }
+  .field-label { font-size: 12px; color: var(--text3); }
+  .field-value { font-size: 13px; color: var(--text); font-weight: 500; font-family: var(--mono); }
+  .field-value.normal { font-family: var(--sans); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { margin-top: 8px; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; color: var(--text2); }
+  .progress-track {
+    height: 8px; background: var(--surface2);
+    border-radius: 4px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 1s ease;
+    position: relative; overflow: hidden;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute; top: 0; left: -100%; bottom: 0; width: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    animation: shimmer 2s infinite;
+  }
+  @keyframes shimmer { to { left: 100%; } }
+
+  /* ── TIMELINE ── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item {
+    display: flex; gap: 14px; padding-bottom: 18px;
+    position: relative;
+  }
+  .timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 15px; top: 30px; bottom: 0;
+    width: 1px; background: var(--border);
+  }
+  .timeline-dot {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; z-index: 1;
+  }
+  .timeline-content { flex: 1; padding-top: 4px; }
+  .timeline-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .timeline-date { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .timeline-amount { font-family: var(--mono); font-size: 13px; }
+
+  /* ── RATE GAUGE ── */
+  .rate-display {
+    text-align: center; padding: 10px 0;
+  }
+  .rate-number {
+    font-family: var(--mono); font-size: 42px; font-weight: 500;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .rate-label { font-size: 12px; color: var(--text3); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--surface2); border-radius: 10px; padding: 4px;
+    border: 1px solid var(--border);
+  }
+  .tab {
+    padding: 7px 16px; border-radius: 7px;
+    font-size: 13px; cursor: pointer; transition: all 0.2s;
+    color: var(--text2); border: none; background: none;
+    font-family: var(--sans);
+  }
+  .tab.active { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+  /* ── NOTE BOX ── */
+  .note-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 13px; color: var(--text2);
+    line-height: 1.6;
+    border-left: 3px solid var(--accent);
+    font-style: italic;
+  }
+
+  /* ── SCORE ── */
+  .score-ring {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .score-circle {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border: 3px solid;
+    transition: all 0.3s;
+  }
+  .score-num { font-family: var(--mono); font-size: 22px; font-weight: 500; }
+  .score-sub { font-size: 9px; color: var(--text3); }
+
+  /* ── MORATORIA ALERT ── */
+  .alert-box {
+    border-radius: 10px; padding: 14px 18px;
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .alert-warn { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); }
+  .alert-ok { background: rgba(45,212,160,0.08); border: 1px solid rgba(45,212,160,0.25); }
+
+  /* ── IMPORT MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 30px;
+    width: 480px;
+    animation: fadeIn 0.25s ease;
+  }
+  .modal-title { font-family: var(--serif); font-size: 20px; margin-bottom: 6px; }
+  .modal-sub { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; color: var(--text3); margin-bottom: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--sans); font-size: 14px;
+    outline: none; transition: border-color 0.2s;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* ── STATS BAR BOTTOM ── */
+  .stats-footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 28px;
+    display: flex; align-items: center; gap: 32px;
+    font-size: 12px; color: var(--text3);
+  }
+  .stat-item { display: flex; align-items: center; gap: 8px; }
+  .stat-num { font-family: var(--mono); color: var(--text2); font-weight: 500; }
+
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">F</div>
+    FinCRM
+    <span style="color:var(--text3); font-family:var(--sans); font-size:13px; font-weight:300; margin-left:4px">— Gestione Clienti</span>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      SISTEMA ATTIVO
+    </div>
+    <div class="operator-info">
+      <div class="operator-avatar">MR</div>
+      <div>
+        <div style="color:var(--text); font-weight:500">Marco Rossi</div>
+        <div style="font-size:11px">Operatore CRM</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" placeholder="Cerca cliente, CF, contratto…" oninput="filterClients(this.value)">
+      </div>
+    </div>
+
+    <div class="sidebar-label">Portafoglio Clienti (6)</div>
+    <div class="client-list" id="clientList"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="mainContent">
+    <div class="welcome-state">
+      <div class="welcome-icon">🏦</div>
+      <h3>Seleziona un cliente</h3>
+      <p>Scegli un cliente dalla lista a sinistra per visualizzare la scheda completa con tutte le informazioni anagrafiche e finanziarie.</p>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" onclick="openImport()">
+          ＋ Nuovo Cliente
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- FOOTER STATS -->
+<div class="stats-footer" id="statsFooter">
+  <div class="stat-item">Portafoglio attivo: <span class="stat-num">6 clienti</span></div>
+  <div class="stat-item">Esposizione totale: <span class="stat-num">€ 287.400</span></div>
+  <div class="stat-item">In regola: <span class="stat-num" style="color:var(--green)">4</span></div>
+  <div class="stat-item">In ritardo: <span class="stat-num" style="color:var(--yellow)">1</span></div>
+  <div class="stat-item">Insolventi: <span class="stat-num" style="color:var(--red)">1</span></div>
+  <div style="margin-left:auto; display:flex; gap:10px;">
+    <button class="btn btn-ghost" onclick="openImport()" style="font-size:12px; padding:5px 14px;">+ Nuovo Cliente</button>
+    <button class="btn btn-ghost" style="font-size:12px; padding:5px 14px;">↓ Esporta Report</button>
+  </div>
+</div>
+
+<!-- MODAL IMPORT -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeImport(event)">
+  <div class="modal">
+    <div class="modal-title">Importa Cliente</div>
+    <div class="modal-sub">Inserisci i dati anagrafici e finanziari dal sistema gestionale</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nome *</label>
+        <input class="form-input" placeholder="Mario">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cognome *</label>
+        <input class="form-input" placeholder="Rossi">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Codice Fiscale *</label>
+        <input class="form-input" placeholder="RSSMRA70A01H501Z" style="font-family:var(--mono)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data di Nascita</label>
+        <input class="form-input" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Importo Prestito (€) *</label>
+      <input class="form-input" placeholder="25.000" style="font-family:var(--mono)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tasso Annuo (%)</label>
+        <input class="form-input" placeholder="6.5" style="font-family:var(--mono)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Durata (mesi)</label>
+        <input class="form-input" placeholder="60" style="font-family:var(--mono)">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Stato Prestito</label>
+      <select class="form-select">
+        <option>In regola</option>
+        <option>In ritardo</option>
+        <option>Insolvente</option>
+        <option>Estinto</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeImport()">Annulla</button>
+      <button class="btn btn-primary" onclick="closeImport()">Importa Cliente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#2a4a8a','#3a6a5a','#6a3a5a','#6a5a2a','#3a4a6a','#5a2a2a'];
+const TEXT_COLORS = ['#7ab4fa','#7adac0','#d07aaa','#d4b46a','#8aacda','#c07a7a'];
+
+const clients = [
+  {
+    id:1, initials:'GF', color:COLORS[0], tc:TEXT_COLORS[0],
+    nome:'Giuseppe', cognome:'Ferrari', cf:'FRRGPP68B12F205Q',
+    nascita:'12/02/1968', luogo:'Milano (MI)', residenza:'Via Torino 44, 20121 Milano',
+    tel:'+39 02 4521 8877', email:'g.ferrari@gmail.com', professione:'Imprenditore',
+    reddito:'€ 68.000 / anno', stato:'In regola',
+    prestito:{ importo:85000, erogato:'15/03/2021', durata:84, rata:1185, pagate:48, tasso:5.9, tipo:'Personale', scopo:'Ristrutturazione immobile', garanzia:'Ipoteca I grado' },
+    rating:780, note:'Cliente storico, ottima puntualità nei pagamenti. Potenziale rinnovo prestito nel Q2 2025.',
+    storico:[
+      {tipo:'✅',label:'Rata #48 pagata',data:'02/03/2024',imp:'€ 1.185',color:'var(--green)'},
+      {tipo:'✅',label:'Rata #47 pagata',data:'02/02/2024',imp:'€ 1.185',color:'var(--green)'},
+      {tipo:'📋',label:'Revisione pratica',data:'15/01/2024',imp:'—',color:'var(--blue)'},
+      {tipo:'✅',label:'Rata #46 pagata',data:'03/01/2024',imp:'€ 1.185',color:'var(--green)'},
+    ]
+  },
+  {
+    id:2, initials:'CS', color:COLORS[1], tc:TEXT_COLORS[1],
+    nome:'Claudia', cognome:'Sorrentino', cf:'SRRCLD85M44F839K',
+    nascita:'04/08/1985', luogo:'Napoli (NA)', residenza:'Viale Europa 12, 80127 Napoli',
+    tel:'+39 081 556 2233', email:'c.sorrentino@libero.it', professione:'Insegnante',
+    reddito:'€ 32.000 / anno', stato:'In regola',
+    prestito:{ importo:22000, erogato:'01/09/2022', durata:48, rata:510, pagate:18, tasso:7.2, tipo:'Personale', scopo:'Acquisto autovettura', garanzia:'Fideiussione' },
+    rating:710, note:'Prima esperienza con la finanziaria. Reddito fisso da dipendente pubblico.',
+    storico:[
+      {tipo:'✅',label:'Rata #18 pagata',data:'01/03/2024',imp:'€ 510',color:'var(--green)'},
+      {tipo:'✅',label:'Rata #17 pagata',data:'01/02/2024',imp:'€ 510',color:'var(--green)'},
+      {tipo:'✅',label:'Rata #16 pagata',data:'01/01/2024',imp:'€ 510',color:'var(--green)'},
+    ]
+  },
+  {
+    id:3, initials:'RM', color:COLORS[2], tc:TEXT_COLORS[2],
+    nome:'Roberto', cognome:'Marchetti', cf:'MRCBRT77R10L219X',
+    nascita:'10/10/1977', luogo:'Torino (TO)', residenza:'Corso Vittorio 88, 10128 Torino',
+    tel:'+39 011 234 5678', email:'r.marchetti@outlook.com', professione:'Commerciante',
+    reddito:'€ 45.000 / anno', stato:'In ritardo',
+    prestito:{ importo:48000, erogato:'10/06/2020', durata:72, rata:840, pagate:45, tasso:6.5, tipo:'Business', scopo:'Liquidità aziendale', garanzia:'Pegno su merce' },
+    rating:580, note:'⚠️ Rata di febbraio 2024 non pervenuta. Contattato telefonicamente il 10/03, promessa di regolarizzazione entro il 20/03.',
+    storico:[
+      {tipo:'⚠️',label:'Rata #45 NON pagata',data:'01/02/2024',imp:'€ 840',color:'var(--yellow)'},
+      {tipo:'📞',label:'Sollecito telefonico',data:'10/02/2024',imp:'—',color:'var(--yellow)'},
+      {tipo:'✅',label:'Rata #44 pagata',data:'03/01/2024',imp:'€ 840',color:'var(--green)'},
+    ]
+  },
+  {
+    id:4, initials:'EL', color:COLORS[3], tc:TEXT_COLORS[3],
+    nome:'Elena', cognome:'Lombardi', cf:'LMBLN91A54H501F',
+    nascita:'14/01/1991', luogo:'Roma (RM)', residenza:'Via Cavour 220, 00184 Roma',
+    tel:'+39 06 7845 1122', email:'e.lombardi@yahoo.it', professione:'Avvocato',
+    reddito:'€ 72.000 / anno', stato:'In regola',
+    prestito:{ importo:65000, erogato:'20/11/2022', durata:60, rata:1250, pagate:16, tasso:5.5, tipo:'Personale', scopo:'Acquisto immobile', garanzia:'Ipoteca II grado' },
+    rating:820, note:'Professionista con reddito elevato. Ha richiesto informazioni per un secondo finanziamento.',
+    storico:[
+      {tipo:'✅',label:'Rata #16 pagata',data:'20/02/2024',imp:'€ 1.250',color:'var(--green)'},
+      {tipo:'💬',label:'Richiesta info nuovo prestito',data:'05/02/2024',imp:'—',color:'var(--blue)'},
+      {tipo:'✅',label:'Rata #15 pagata',data:'20/01/2024',imp:'€ 1.250',color:'var(--green)'},
+    ]
+  },
+  {
+    id:5, initials:'DG', color:COLORS[4], tc:TEXT_COLORS[4],
+    nome:'Davide', cognome:'Greco', cf:'GRCDVD55P20C351B',
+    nascita:'20/09/1955', luogo:'Bari (BA)', residenza:'Via Amendola 4, 70126 Bari',
+    tel:'+39 080 332 1199', email:'d.greco@virgilio.it', professione:'Pensionato',
+    reddito:'€ 22.000 / anno', stato:'In regola',
+    prestito:{ importo:12000, erogato:'05/05/2023', durata:36, rata:380, pagate:10, tasso:8.1, tipo:'Cessione del Quinto', scopo:'Spese mediche', garanzia:'CQS pensione' },
+    rating:660, note:'Pensionato INPS. Prestito con cessione del quinto sulla pensione. Rischio minimo.',
+    storico:[
+      {tipo:'✅',label:'Rata #10 pagata',data:'05/02/2024',imp:'€ 380',color:'var(--green)'},
+      {tipo:'✅',label:'Rata #9 pagata',data:'05/01/2024',imp:'€ 380',color:'var(--green)'},
+    ]
+  },
+  {
+    id:6, initials:'VF', color:COLORS[5], tc:TEXT_COLORS[5],
+    nome:'Valentina', cognome:'Ferretti', cf:'FRRVSN88S67D548T',
+    nascita:'27/11/1988', luogo:'Firenze (FI)', residenza:'Lungarno Corsini 5, 50123 Firenze',
+    tel:'+39 055 778 4400', email:'v.ferretti@gmail.com', professione:'Libera professionista',
+    reddito:'€ 28.000 / anno', stato:'Insolvente',
+    prestito:{ importo:55400, erogato:'12/01/2019', durata:60, rata:1080, pagate:60, tasso:6.8, tipo:'Personale', scopo:'Liquidità', garanzia:'Nessuna' },
+    rating:420, note:'🔴 Prestito scaduto il 12/01/2024. Residuo non saldato. Pratica passata all\'ufficio legale per recupero crediti.',
+    storico:[
+      {tipo:'🔴',label:'Pratica a recupero crediti',data:'15/02/2024',imp:'—',color:'var(--red)'},
+      {tipo:'❌',label:'Rata #60 NON pagata',data:'12/01/2024',imp:'€ 1.080',color:'var(--red)'},
+      {tipo:'📋',label:'Messa in mora',data:'20/01/2024',imp:'—',color:'var(--red)'},
+    ]
+  },
+];
+
+let activeId = null;
+
+function stateColor(s) {
+  if(s==='In regola') return 'var(--green)';
+  if(s==='In ritardo') return 'var(--yellow)';
+  if(s==='Insolvente') return 'var(--red)';
+  return 'var(--blue)';
+}
+function stateBadge(s) {
+  if(s==='In regola') return 'badge-green';
+  if(s==='In ritardo') return 'badge-yellow';
+  if(s==='Insolvente') return 'badge-red';
+  return 'badge-blue';
+}
+
+function renderList(list) {
+  const el = document.getElementById('clientList');
+  el.innerHTML = list.map(c => `
+    <div class="client-item ${activeId===c.id?'active':''}" onclick="selectClient(${c.id})">
+      <div class="client-avatar" style="background:${c.color}20; color:${c.tc}; border:1px solid ${c.color}40">${c.initials}</div>
+      <div class="client-info">
+        <div class="client-name">${c.cognome} ${c.nome}</div>
+        <div class="client-meta">
+          <span class="status-dot" style="background:${stateColor(c.stato)}"></span>
+          ${c.stato} · €${(c.prestito.importo/1000).toFixed(0)}k
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterClients(q) {
+  const term = q.toLowerCase();
+  const filtered = clients.filter(c =>
+    `${c.nome} ${c.cognome} ${c.cf}`.toLowerCase().includes(term)
+  );
+  renderList(filtered);
+}
+
+function fmt(n) { return new Intl.NumberFormat('it-IT').format(n); }
+
+function selectClient(id) {
+  activeId = id;
+  renderList(clients.filter(c => document.querySelector('.search-input')?.value ?
+    `${c.nome} ${c.cognome} ${c.cf}`.toLowerCase().includes(document.querySelector('.search-input').value.toLowerCase()) : true
+  ));
+
+  const c = clients.find(x=>x.id===id);
+  const p = c.prestito;
+  const residuo = p.importo - (p.pagate * p.rata);
+  const residuoSafe = Math.max(0, residuo);
+  const perc = Math.round((p.pagate / p.durata) * 100);
+  const ratingColor = c.rating >= 750 ? 'var(--green)' : c.rating >= 600 ? 'var(--yellow)' : 'var(--red)';
+
+  const progressColor = c.stato === 'In regola' ? 'linear-gradient(90deg, var(--accent), var(--accent2))' :
+                        c.stato === 'In ritardo' ? 'var(--yellow)' : 'var(--red)';
+
+  const alert = c.stato === 'In ritardo' ?
+    `<div class="alert-box alert-warn" style="margin-bottom:0">
+      <span style="font-size:18px">⚠️</span>
+      <div><strong style="color:var(--yellow)">Rata in ritardo</strong><br>${c.note}</div>
+     </div>` :
+    c.stato === 'Insolvente' ?
+    `<div class="alert-box alert-warn" style="border-color:rgba(248,113,113,0.3); background:rgba(248,113,113,0.08); margin-bottom:0">
+      <span style="font-size:18px">🔴</span>
+      <div><strong style="color:var(--red)">Posizione insolvente</strong><br>${c.note}</div>
+     </div>` :
+    `<div class="alert-box alert-ok" style="margin-bottom:0">
+      <span style="font-size:18px">✅</span>
+      <div><strong style="color:var(--green)">Posizione regolare</strong><br>Tutte le rate sono state pagate puntualmente.</div>
+     </div>`;
+
+  document.getElementById('mainContent').innerHTML = `
+    <!-- HEADER CLIENTE -->
+    <div class="client-header">
+      <div class="client-avatar client-header-avatar" style="background:${c.color}20; color:${c.tc}; border:1px solid ${c.color}40; font-size:24px">${c.initials}</div>
+      <div class="client-header-info">
+        <div class="client-header-name">${c.cognome} ${c.nome}</div>
+        <div class="client-header-sub">
+          <span style="font-family:var(--mono)">${c.cf}</span>
+          <span>·</span>
+          <span class="badge ${stateBadge(c.stato)}">● ${c.stato}</span>
+          <span class="badge badge-gold">⬡ ${p.tipo}</span>
+        </div>
+      </div>
+      <div class="client-header-actions">
+        <button class="btn btn-ghost">📋 Stampa Scheda</button>
+        <button class="btn btn-ghost">📧 Invia Comunicazione</button>
+        <button class="btn btn-primary">✏️ Modifica</button>
+      </div>
+    </div>
+
+    <!-- ALERT -->
+    ${alert}
+
+    <!-- KPI ROW -->
+    <div class="grid-3" style="animation-delay:0.05s">
+      <div class="kpi-card gold">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-label">Importo Finanziato</div>
+        <div class="kpi-value">€ ${fmt(p.importo)}</div>
+        <div class="kpi-sub">${p.scopo}</div>
+      </div>
+      <div class="kpi-card ${c.stato==='In regola'?'green':c.stato==='In ritardo'?'':'red'}">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-label">Residuo Debito</div>
+        <div class="kpi-value" style="color:${residuoSafe>0?'var(--text)':'var(--green)'}">€ ${fmt(residuoSafe)}</div>
+        <div class="kpi-sub">${perc}% rimborsato · ${p.durata - p.pagate} rate rimanenti</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-label">Rata Mensile</div>
+        <div class="kpi-value">€ ${fmt(p.rata)}</div>
+        <div class="kpi-sub">${p.pagate}/${p.durata} rate pagate</div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="card" style="animation:fadeIn 0.4s ease">
+      <div class="card-title"><div class="card-title-icon">📈</div> Avanzamento Rimborso</div>
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Rata ${p.pagate} di ${p.durata}</span>
+          <span style="font-family:var(--mono); color:var(--accent)">${perc}%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${perc}%; background:${progressColor}"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--text3); font-family:var(--mono)">
+          <span>Erogazione: ${p.erogato}</span>
+          <span>Totale pagato: € ${fmt(p.pagate * p.rata)}</span>
+          <span>Scadenza: ${addMonths(p.erogato, p.durata)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANAGRAFICA + FINANZIARIO -->
+    <div class="grid-2" style="animation-delay:0.1s">
+      <!-- ANAGRAFICA -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">👤</div> Dati Anagrafici</div>
+        <div class="field-row"><span class="field-label">Cognome e Nome</span><span class="field-value normal">${c.cognome} ${c.nome}</span></div>
+        <div class="field-row"><span class="field-label">Codice Fiscale</span><span class="field-value">${c.cf}</span></div>
+        <div class="field-row"><span class="field-label">Data di Nascita</span><span class="field-value">${c.nascita}</span></div>
+        <div class="field-row"><span class="field-label">Luogo di Nascita</span><span class="field-value normal">${c.luogo}</span></div>
+        <div class="field-row"><span class="field-label">Residenza</span><span class="field-value normal">${c.residenza}</span></div>
+        <div class="field-row"><span class="field-label">Telefono</span><span class="field-value">${c.tel}</span></div>
+        <div class="field-row"><span class="field-label">Email</span><span class="field-value normal" style="font-size:12px">${c.email}</span></div>
+        <div class="field-row"><span class="field-label">Professione</span><span class="field-value normal">${c.professione}</span></div>
+        <div class="field-row"><span class="field-label">Reddito Dichiarato</span><span class="field-value">${c.reddito}</span></div>
+      </div>
+
+      <!-- DETTAGLIO PRESTITO -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">📄</div> Dettaglio Contratto</div>
+        <div class="field-row"><span class="field-label">Tipo Finanziamento</span><span class="field-value normal">${p.tipo}</span></div>
+        <div class="field-row"><span class="field-label">Data Erogazione</span><span class="field-value">${p.erogato}</span></div>
+        <div class="field-row"><span class="field-label">Durata</span><span class="field-value">${p.durata} mesi</span></div>
+        <div class="field-row"><span class="field-label">Tasso Annuo (TAN)</span><span class="field-value" style="color:var(--accent)">${p.tasso}%</span></div>
+        <div class="field-row"><span class="field-label">Scopo</span><span class="field-value normal">${p.scopo}</span></div>
+        <div class="field-row"><span class="field-label">Garanzia</span><span class="field-value normal">${p.garanzia}</span></div>
+        <div class="field-row"><span class="field-label">Stato</span>
+          <span class="badge ${stateBadge(c.stato)}">${c.stato}</span>
+        </div>
+
+        <div style="margin-top:18px">
+          <div class="card-title" style="margin-bottom:12px"><div class="card-title-icon">⭐</div> Credit Score</div>
+          <div style="display:flex; align-items:center; gap:16px">
+            <div class="score-circle" style="border-color:${ratingColor}40; background:${ratingColor}10">
+              <div class="score-num" style="color:${ratingColor}">${c.rating}</div>
+              <div class="score-sub">/900</div>
+            </div>
+            <div>
+              <div style="font-size:14px; font-weight:500; color:${ratingColor}">${c.rating>=750?'Eccellente':c.rating>=650?'Buono':c.rating>=550?'Sufficiente':'Critico'}</div>
+              <div style="font-size:12px; color:var(--text3); margin-top:4px">Aggiornato al ${new Date().toLocaleDateString('it-IT')}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASSO + STORICO -->
+    <div class="grid-2" style="animation-delay:0.15s">
+      <!-- TASSO -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">%</div> Condizioni Economiche</div>
+        <div class="rate-display">
+          <div class="rate-number">${p.tasso}%</div>
+          <div class="rate-label">Tasso Annuo Nominale (TAN)</div>
+        </div>
+        <div style="height:1px; background:var(--border); margin:14px 0"></div>
+        <div class="field-row"><span class="field-label">Rata mensile</span><span class="field-value">€ ${fmt(p.rata)}</span></div>
+        <div class="field-row"><span class="field-label">Totale interessi</span><span class="field-value" style="color:var(--accent)">€ ${fmt(p.rata * p.durata - p.importo)}</span></div>
+        <div class="field-row"><span class="field-label">Costo totale prestito</span><span class="field-value">€ ${fmt(p.rata * p.durata)}</span></div>
+        <div class="field-row"><span class="field-label">Onere mensile / reddito</span><span class="field-value">${Math.round(p.rata / (parseInt(c.reddito.replace(/\D/g,'')) / 12) * 100)}%</span></div>
+      </div>
+
+      <!-- STORICO -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-icon">🕐</div> Cronologia Recente</div>
+        <div class="timeline">
+          ${c.storico.map(s => `
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:${s.color}18; color:${s.color}; border:1px solid ${s.color}30; font-size:11px">
+                ${s.tipo}
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title">${s.label}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px">
+                  <div class="timeline-date">${s.data}</div>
+                  ${s.imp !== '—' ? `<div class="timeline-amount" style="color:${s.color}">${s.imp}</div>` : ''}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTE OPERATORE -->
+    <div class="card" style="animation-delay:0.2s">
+      <div class="card-title"><div class="card-title-icon">📝</div> Note Operatore</div>
+      <div class="note-box">${c.note}</div>
+      <div style="margin-top:12px; display:flex; gap:10px">
+        <button class="btn btn-ghost" style="font-size:12px">+ Aggiungi nota</button>
+        <button class="btn btn-ghost" style="font-size:12px">📎 Allega documento</button>
+      </div>
+    </div>
+  `;
+}
+
+function addMonths(dateStr, months) {
+  const [d, m, y] = dateStr.split('/').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setMonth(dt.getMonth() + months);
+  return dt.toLocaleDateString('it-IT');
+}
+
+function openImport() {
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeImport(e) {
+  if(!e || e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+// Init
+renderList(clients);
+</script>
+</body>
+</html>
